@@ -5,6 +5,7 @@ import {
   GitStatusContext,
   PullRequestStatus,
 } from 'azure-devops-node-api/interfaces/GitInterfaces.js';
+import { getBearerToken } from './azure-got-wrapper';
 import type { MergeStrategy } from '../../../config/types';
 import { logger } from '../../../logger';
 import type { HostRule, PrState } from '../../../types';
@@ -114,7 +115,9 @@ export function getRenovatePRFormat(azurePr: GitPullRequest): AzurePr {
   } as AzurePr;
 }
 
-export function getStorageExtraCloneOpts(config: HostRule): GitOptions {
+export async function getStorageExtraCloneOpts(
+  config: HostRule,
+): Promise<GitOptions> {
   let authType: string;
   let authValue: string;
   if (!config.token && config.username && config.password) {
@@ -123,9 +126,12 @@ export function getStorageExtraCloneOpts(config: HostRule): GitOptions {
   } else if (config.token?.length === 52) {
     authType = 'basic';
     authValue = toBase64(`:${config.token}`);
-  } else {
+  } else if (config.token) {
     authType = 'bearer';
     authValue = config.token!;
+  } else {
+    authType = 'bearer';
+    authValue = await getBearerToken();
   }
   addSecretForSanitizing(authValue, 'global');
   return {

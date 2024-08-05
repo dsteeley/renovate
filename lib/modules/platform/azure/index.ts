@@ -94,9 +94,15 @@ export function initPlatform({
     throw new Error('Init: You must configure an Azure DevOps endpoint');
   }
   if (!token && !(username && password)) {
-    throw new Error(
-      'Init: You must configure an Azure DevOps token, or a username and password',
-    );
+    // Test for bearer auth
+    try {
+      azureApi.getBearerToken();
+      logger.info('Using azure_identity auth.');
+    } catch {
+      throw new Error(
+        'Init: You must configure Azure Identity auth, an Azure DevOps token, or a username and password',
+      );
+    }
   }
   // TODO: Add a connection check that endpoint/token combination are valid (#9593)
   const res = {
@@ -235,7 +241,7 @@ export async function initRepo({
   await git.initRepo({
     ...config,
     url,
-    extraCloneOpts: getStorageExtraCloneOpts(opts),
+    extraCloneOpts: await getStorageExtraCloneOpts(opts),
     cloneSubmodules,
   });
   const repoConfig: RepoResult = {

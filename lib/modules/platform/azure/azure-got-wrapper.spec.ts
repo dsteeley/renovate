@@ -18,7 +18,7 @@ describe('modules/platform/azure/azure-got-wrapper', () => {
       expect(azure.policyApi).toThrow('No config found for azure');
     });
 
-    it('should set personal access token and endpoint', () => {
+    it('should set personal access token and endpoint', async () => {
       hostRules.add({
         hostType: 'azure',
         token: '123test',
@@ -28,8 +28,8 @@ describe('modules/platform/azure/azure-got-wrapper', () => {
 
       const res = azure.azureObj();
 
-      delete res.rest.client.userAgent;
-      delete res.vsoClient.restClient.client.userAgent;
+      delete (await res).rest.client.userAgent;
+      delete (await res).vsoClient.restClient.client.userAgent;
 
       expect(res).toMatchObject({
         serverUrl: 'https://dev.azure.com/renovate1',
@@ -39,7 +39,7 @@ describe('modules/platform/azure/azure-got-wrapper', () => {
       });
     });
 
-    it('should set bearer token and endpoint', () => {
+    it('should set bearer token and endpoint', async () => {
       hostRules.add({
         hostType: 'azure',
         token: 'testtoken',
@@ -49,8 +49,8 @@ describe('modules/platform/azure/azure-got-wrapper', () => {
 
       const res = azure.azureObj();
 
-      delete res.rest.client.userAgent;
-      delete res.vsoClient.restClient.client.userAgent;
+      delete (await res).rest.client.userAgent;
+      delete (await res).vsoClient.restClient.client.userAgent;
 
       expect(res).toMatchObject({
         serverUrl: 'https://dev.azure.com/renovate2',
@@ -60,7 +60,7 @@ describe('modules/platform/azure/azure-got-wrapper', () => {
       });
     });
 
-    it('should set password and endpoint', () => {
+    it('should set password and endpoint', async () => {
       hostRules.add({
         hostType: 'azure',
         username: 'user',
@@ -71,8 +71,8 @@ describe('modules/platform/azure/azure-got-wrapper', () => {
 
       const res = azure.azureObj();
 
-      delete res.rest.client.userAgent;
-      delete res.vsoClient.restClient.client.userAgent;
+      delete (await res).rest.client.userAgent;
+      delete (await res).vsoClient.restClient.client.userAgent;
 
       expect(res).toMatchObject({
         serverUrl: 'https://dev.azure.com/renovate3',
