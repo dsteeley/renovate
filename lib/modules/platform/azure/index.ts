@@ -4,6 +4,7 @@ import {
   GitPullRequest,
   GitPullRequestCommentThread,
   GitPullRequestMergeStrategy,
+  GitRepository,
   GitStatus,
   GitStatusState,
   GitVersionDescriptor,
@@ -48,6 +49,7 @@ import {
   getBranchNameWithoutRefsheadsPrefix,
   getGitStatusContextCombinedName,
   getGitStatusContextFromCombinedName,
+  getProjectAndRepo,
   getRenovatePRFormat,
   getRepoByName,
   getStorageExtraCloneOpts,
@@ -200,10 +202,37 @@ export async function initRepo({
   logger.debug(`initRepo("${repository}")`);
   config = { repository } as Config;
   const azureApiGit = await azureApi.gitApi();
-  const repos = await azureApiGit.getRepositories();
-  const repo = getRepoByName(repository, repos);
+  logger.debug('DWS-Got AzureApiGit');
+  // Handle scenario where we don't have permission to list repos but we do have permission to read the specified repo
+  // const repos = await azureApiGit.getRepositories();
+  let repo: GitRepository | null = null as GitRepository | null;
+  try {
+    await azureApiGit
+      .getRepositories()
+      .then((repos) => (repo = getRepoByName(repository, repos)))
+      .catch(async (err) => {
+        logger.error({ err }, 'Failed to fetch all repositories in await');
+        let { project, repo: repoName } = getProjectAndRepo(config.repository);
+        project = project.toLowerCase();
+        repoName = repoName.toLowerCase();
+        logger.debug(`Fetching repository: ${repoName} in project: ${project}`);
+        repo = await azureApiGit.getRepository(repoName, project);
+      });
+    logger.debug('DWS-Got Repo 1st try');
+  } catch (err) {
+    logger.error({ err }, 'Failed to fetch all repositories in catch');
+    let { project, repo: repoName } = getProjectAndRepo(config.repository);
+    project = project.toLowerCase();
+    repoName = repoName.toLowerCase();
+    logger.debug(`Fetching repository: ${repoName} in project: ${project}`);
+    repo = await azureApiGit.getRepository(repoName, project);
+    logger.debug('DWS-Got Repo 2nd try');
+  }
+  logger.debug(`repo("${repo}")`);
+
   if (!repo) {
-    logger.error({ repos, repo }, 'Could not find repo in repo list');
+    // logger.error({ repos, repo }, 'Could not find repo in repo list');
+    logger.error({ repo }, 'Could not find repo in project');
     throw new Error(REPOSITORY_NOT_FOUND);
   }
   logger.debug({ repositoryDetails: repo }, 'Repository details');

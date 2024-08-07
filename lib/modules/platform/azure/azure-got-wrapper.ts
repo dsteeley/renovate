@@ -8,15 +8,18 @@ import type { ICoreApi } from 'azure-devops-node-api/CoreApi';
 import type { IGitApi } from 'azure-devops-node-api/GitApi';
 import type { IPolicyApi } from 'azure-devops-node-api/PolicyApi';
 import type { IRequestHandler } from 'azure-devops-node-api/interfaces/common/VsoBaseInterfaces';
-import { DefaultAzureCredential } from '@azure/identity';
+import { AzureCliCredential } from '@azure/identity';
 import type { HostRule } from '../../../types';
 import * as hostRules from '../../../util/host-rules';
+import { logger } from '../../../logger';
 
 const hostType = 'azure';
 let endpoint: string;
 
 export async function getBearerToken(): Promise<string> {
-  const credential = new DefaultAzureCredential();
+  // TODO, should this be configurable?
+  const credential = new AzureCliCredential();
+  logger.debug('Getting Azure bearer token');
   // TODO, should this be configurable?
   const bearer = await credential.getToken(
     'https://management.core.windows.net/.default',
@@ -47,6 +50,7 @@ export async function azureObj(): Promise<azure.WebApi> {
     }
   }
   const authHandler = await getAuthenticationHandler(config);
+  logger.trace('Got azure AuthHandler');
   return new azure.WebApi(endpoint, authHandler, {
     allowRetries: true,
     maxRetries: 2,
